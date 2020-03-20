@@ -1,9 +1,11 @@
 package pcurl
 
 import (
+	"fmt"
 	"github.com/guonaihong/clop"
 	"github.com/guonaihong/gout"
 	"net/http"
+	"os"
 )
 
 type Curl struct {
@@ -15,15 +17,23 @@ type Curl struct {
 	Err error
 }
 
-func Parse(curl string) *Curl {
-	c := Curl{}
-	p := clop.New([]string{} /*todo*/).SetExit(false)
-	c.Err = p.Bind(&c)
-	return &c
-}
-
 func ParseAndRequest(curl string) (*http.Request, error) {
 	return Parse(curl).Request()
+}
+
+func Parse(curl string) *Curl {
+	return ParseSlice([]string{})
+}
+
+func ParseSlice(curl []string) *Curl {
+	c := Curl{}
+	if len(curl) > 0 && curl[0] == "curl" {
+		curl = curl[1:]
+	}
+
+	p := clop.New(curl).SetExit(false)
+	c.Err = p.Bind(&c)
+	return &c
 }
 
 func (c *Curl) Request() (*http.Request, error) {
@@ -31,8 +41,19 @@ func (c *Curl) Request() (*http.Request, error) {
 		c.Method = "POST"
 	}
 
-	// TODO open
-	//err := gout.New().Method(c.Method).URL(c.URL).SetBody(c.Data).Do()
+	var data interface{}
 
-	return nil, nil
+	data = c.Data
+	if len(c.Data) > 0 && c.Data[0] == '@' {
+		fd, err := os.Open(c.Data[1:])
+		if err != nil {
+			return nil, err
+		}
+
+		defer fd.Close()
+
+		data = fd
+	}
+
+	return gout.New().SetMethod(c.Method).Debug(true).SetURL(c.URL).SetBody(data).Request()
 }
