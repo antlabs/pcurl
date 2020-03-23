@@ -1,11 +1,11 @@
 package pcurl
 
 import (
-	"fmt"
 	"github.com/guonaihong/clop"
 	"github.com/guonaihong/gout"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Curl struct {
@@ -27,7 +27,7 @@ func Parse(curl string) *Curl {
 
 func ParseSlice(curl []string) *Curl {
 	c := Curl{}
-	if len(curl) > 0 && curl[0] == "curl" {
+	if len(curl) > 0 && strings.ToLower(curl[0]) == "curl" {
 		curl = curl[1:]
 	}
 

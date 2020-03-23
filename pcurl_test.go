@@ -2,6 +2,7 @@ package pcurl
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/guonaihong/gout"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -26,8 +27,15 @@ func createGeneral(data string) *httptest.Server {
 
 func Test_ParseSlice(t *testing.T) {
 
-	ts := createGeneral("")
-	s := []string{"curl", "-X", "POST", "-d", `{"key":"val"}`, ts.URL}
-	_, err := ParseSlice(s).Request()
+	// 创建测试服务
+
+	need := `{"key":"val"}`
+	ts := createGeneral(need)
+	got := ""
+	s := []string{"curl", "-X", "POST", "-d", need, ts.URL}
+	req, err := ParseSlice(s).Request()
 	assert.NoError(t, err)
+	err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
+	assert.NoError(t, err)
+	assert.Equal(t, need, got)
 }
