@@ -50,7 +50,6 @@ func createGeneralHeader(need H, t *testing.T) *httptest.Server {
 		router.POST("/", func(c *gin.Context) {
 			var gotHeader H
 			c.BindHeader(&gotHeader)
-			fmt.Printf("==================gotHeader:%s\n", gotHeader)
 			if assert.Equal(t, need, gotHeader) {
 				c.String(200, "")
 				return
@@ -98,4 +97,7 @@ func Test_Header(t *testing.T) {
 		gout.New().SetRequest(req).Debug(true).Code(&code).Do()
 		assert.Equal(t, code, 200)
 	}
+}
+
+func Test_Form(t *testing.T) {
 }
