@@ -44,7 +44,7 @@ func (c *Curl) createHeader() []string {
 
 	header := make([]string, len(c.Header)*2)
 	index := 0
-	for _, v := range header {
+	for _, v := range c.Header {
 		pos := strings.IndexByte(v, ':')
 		if pos == -1 {
 			continue
@@ -52,7 +52,7 @@ func (c *Curl) createHeader() []string {
 
 		header[index] = v[:pos]
 		index++
-		header[index] = v[pos:]
+		header[index] = v[pos+1:]
 		index++
 	}
 

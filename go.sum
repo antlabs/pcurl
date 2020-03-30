@@ -20,8 +20,8 @@ github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/guonaihong/clop v0.0.1 h1:sor6Azjp5ys6hxuJKwgCjQV0n6oFl43HbTrmOIZFEr4=
-github.com/guonaihong/clop v0.0.1/go.mod h1:6r46yf9HnBFtFgblQrzvbxzeAbFob3Qud3PnuhphwgI=
+github.com/guonaihong/clop v0.0.2 h1:w4ULwZoqjhNt7MrKSAOS34rn8TzEADR7J579yuB4FOc=
+github.com/guonaihong/clop v0.0.2/go.mod h1:6r46yf9HnBFtFgblQrzvbxzeAbFob3Qud3PnuhphwgI=
 github.com/guonaihong/gout v0.0.10-0.20200319145506-f680e3c89b65 h1:gUPwwuesHdmpmT/648oEKVL1m5cmymi37pznF972dmo=
 github.com/guonaihong/gout v0.0.10-0.20200319145506-f680e3c89b65/go.mod h1:vXvv5Kxr70eM5wrp4F0+t9lnLWmq+YPW2GByll2f/EA=
 github.com/json-iterator/go v1.1.7 h1:KfgG9LzI+pYjr4xvmz/5H4FXjokeP+rlHLhv3iH62Fo=
