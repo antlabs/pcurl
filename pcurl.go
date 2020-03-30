@@ -74,7 +74,7 @@ func (c *Curl) createForm() ([]interface{}, error) {
 
 		form[index] = v[:pos]
 		index++
-		fieldValue := v[pos:]
+		fieldValue := v[pos+1:]
 		if len(fieldValue) > 0 && fieldValue[0] == '@' {
 
 			form[index] = gout.FormFile(fieldValue[1:])

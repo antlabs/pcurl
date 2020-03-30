@@ -102,12 +102,15 @@ func Test_Header(t *testing.T) {
 	} {
 
 		code := 0
+		// 创建测试服务端
 		ts := createGeneralHeader(headerData.need, t)
 
+		// 解析curl表达式
 		req, err := ParseSlice(append(headerData.curlHeader, ts.URL)).Request()
 		assert.NoError(t, err)
 
 		var getJSON H
+		//发送请求
 		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
 		assert.NoError(t, err)
 		assert.Equal(t, code, 200)
@@ -115,5 +118,65 @@ func Test_Header(t *testing.T) {
 	}
 }
 
+func createGeneralForm(need H, t *testing.T) *httptest.Server {
+	router := func() *gin.Engine {
+		router := gin.New()
+
+		router.POST("/", func(c *gin.Context) {
+			gotForm := make(H, 2)
+			c.ShouldBind(&gotForm)
+
+			//c.ShouldBindHeader(&gotHeader2)
+			if assert.Equal(t, need, gotForm) {
+				c.JSON(200, gotForm)
+				return
+			}
+
+			c.String(500, "")
+		})
+
+		return router
+	}()
+
+	return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
+}
+
 func Test_Form(t *testing.T) {
+	type testForm struct {
+		curlForm []string
+		need     H
+	}
+
+	for _, formData := range []testForm{
+		testForm{
+			curlForm: []string{"curl", "-X", "POST", "-F", "text=good", "-F", "voice=@./testdata/voice.pcm"},
+			need: H{
+				"text":  "good",
+				"voice": "voice",
+			},
+		},
+		testForm{
+			curlForm: []string{"curl", "-X", "POST", "--form", "text=good", "--form", "voice=@./testdata/voice.pcm"},
+			need: H{
+				"text":  "good",
+				"voice": "voice",
+			},
+		},
+	} {
+
+		code := 0
+		// 创建测试服务端
+		ts := createGeneralForm(formData.need, t)
+
+		// 解析curl表达式
+		req, err := ParseSlice(append(formData.curlForm, ts.URL)).Request()
+		assert.NoError(t, err)
+
+		var getJSON H
+		//发送请求
+		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
+		assert.NoError(t, err)
+		assert.Equal(t, code, 200)
+		assert.Equal(t, formData.need, getJSON)
+	}
 }
