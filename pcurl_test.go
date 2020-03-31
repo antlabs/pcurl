@@ -4,8 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/gout"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -124,6 +126,31 @@ func createGeneralForm(need H, t *testing.T) *httptest.Server {
 
 		router.POST("/", func(c *gin.Context) {
 			gotForm := make(H, 2)
+			err := c.Request.ParseMultipartForm(32 * 1024 * 1024)
+
+			assert.NoError(t, err)
+
+			for k, f := range c.Request.Form {
+				if len(f) == 0 {
+					continue
+				}
+
+				gotForm[k] = f[0]
+			}
+			for k, f := range c.Request.MultipartForm.File {
+				if len(f) == 0 {
+					continue
+				}
+				fd, err := f[0].Open()
+				assert.NoError(t, err)
+
+				var s strings.Builder
+
+				io.Copy(&s, fd)
+				gotForm[k] = s.String()
+				fd.Close()
+			}
+
 			c.ShouldBind(&gotForm)
 
 			//c.ShouldBindHeader(&gotHeader2)
@@ -152,14 +179,14 @@ func Test_Form(t *testing.T) {
 			curlForm: []string{"curl", "-X", "POST", "-F", "text=good", "-F", "voice=@./testdata/voice.pcm"},
 			need: H{
 				"text":  "good",
-				"voice": "voice",
+				"voice": "voice\n",
 			},
 		},
 		testForm{
 			curlForm: []string{"curl", "-X", "POST", "--form", "text=good", "--form", "voice=@./testdata/voice.pcm"},
 			need: H{
 				"text":  "good",
-				"voice": "voice",
+				"voice": "voice\n",
 			},
 		},
 	} {
