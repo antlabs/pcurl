@@ -207,3 +207,50 @@ func Test_Form(t *testing.T) {
 		assert.Equal(t, formData.need, getJSON)
 	}
 }
+
+//TODO
+func Test_Method(t *testing.T) {
+}
+
+func Test_URL(t *testing.T) {
+	type testURL struct {
+		curl []string
+		need string
+	}
+
+	for _, urlData := range []testURL{
+		testURL{
+			curl: []string{"curl", "-X", "POST"},
+			need: "1",
+		},
+		testURL{
+			curl: []string{"curl", "-X", "POST"},
+			need: "2",
+		},
+	} {
+
+		code := 0
+		// 创建测试服务端
+		ts := createGeneral("1")
+		ts2 := createGeneral("2")
+
+		// 解析curl表达式
+		var curl []string
+		if urlData.need == "1" {
+			curl = append(urlData.curl, "--url", ts2.URL, ts.URL)
+		} else {
+			curl = append(urlData.curl, ts.URL, "--url", ts2.URL)
+
+		}
+
+		req, err := ParseSlice(curl).Request()
+		assert.NoError(t, err)
+
+		s := ""
+		//发送请求
+		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindBody(&s).Do()
+		assert.NoError(t, err)
+		assert.Equal(t, code, 200)
+		assert.Equal(t, urlData.need, s)
+	}
+}

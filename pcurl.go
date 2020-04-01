@@ -13,9 +13,11 @@ type Curl struct {
 	Header []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
 	Data   string   `clop:"-d; --data"   usage:"HTTP POST data"`
 	Form   []string `clop:"-F; --form" usage:"Specify multipart MIME data"`
-	URL    string   `clop:"args=url" usage:"url"`
+	URL2   string   `clop:"args=url2" usage:"url2"`
+	URL    string   `clop:"--url" usage:"URL to work with"`
 
 	Err error
+	p   *clop.Clop
 }
 
 func ParseAndRequest(curl string) (*http.Request, error) {
@@ -32,8 +34,8 @@ func ParseSlice(curl []string) *Curl {
 		curl = curl[1:]
 	}
 
-	p := clop.New(curl).SetExit(false)
-	c.Err = p.Bind(&c)
+	c.p = clop.New(curl).SetExit(false)
+	c.Err = c.p.Bind(&c)
 	return &c
 }
 
@@ -129,7 +131,12 @@ func (c *Curl) Request() (*http.Request, error) {
 		g.SetForm(form) //设置formdata
 	}
 
-	return g.SetURL(c.URL). //设置url
+	url := c.URL2
+	if c.p.GetIndex("url") > c.p.GetIndex("url2") {
+		url = c.URL
+	}
+
+	return g.SetURL(url). //设置url
 				SetBody(data). //设置http body
 				Request()      //获取*http.Request
 }
