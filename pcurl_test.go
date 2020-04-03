@@ -29,19 +29,45 @@ func createGeneral(data string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
 }
 
-func Test_ParseSlice(t *testing.T) {
+func Test_Curl(t *testing.T) {
 
-	// 创建测试服务
-	need := `{"key":"val"}`
-	ts := createGeneral(need)
-	got := ""
-	s := []string{"curl", "-X", "POST", "-d", need, ts.URL}
-	req, err := ParseSlice(s).Request()
-	assert.NoError(t, err)
+	type testData struct {
+		need       string
+		curlSlice  []string
+		curlString string
+	}
 
-	err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
-	assert.NoError(t, err)
-	assert.Equal(t, need, got)
+	for _, d := range []testData{
+		{
+			need:       `{"key":"val"}`,
+			curlSlice:  []string{"curl", "-X", "POST", "-d"},
+			curlString: "curl  -X  POST -d",
+		},
+	} {
+
+		// 创建测试服务
+		ts := createGeneral(d.need)
+		got := ""
+
+		// 生成curl slice
+		curlSlice := append(d.curlSlice, d.need, ts.URL)
+		req, err := ParseSlice(curlSlice).Request()
+		assert.NoError(t, err)
+
+		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
+		assert.NoError(t, err)
+		assert.Equal(t, d.need, got)
+
+		// 生成curl字符串
+		curlString := append(d.curlSlice, d.need, ts.URL)
+		req, err = ParseSlice(curlString).Request()
+		assert.NoError(t, err)
+
+		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
+		assert.NoError(t, err)
+		assert.Equal(t, d.need, got)
+	}
+
 }
 
 func createGeneralHeader(need H, t *testing.T) *httptest.Server {

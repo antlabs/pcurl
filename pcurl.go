@@ -25,7 +25,8 @@ func ParseAndRequest(curl string) (*http.Request, error) {
 }
 
 func Parse(curl string) *Curl {
-	return ParseSlice([]string{})
+	curlSlice := GetArgsToken(curl)
+	return ParseSlice(curlSlice)
 }
 
 func ParseSlice(curl []string) *Curl {
