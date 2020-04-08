@@ -9,12 +9,14 @@ import (
 )
 
 type Curl struct {
-	Method string   `clop:"-X; --request" usage:"Specify request command to use"`
-	Header []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
-	Data   string   `clop:"-d; --data"   usage:"HTTP POST data"`
-	Form   []string `clop:"-F; --form" usage:"Specify multipart MIME data"`
-	URL2   string   `clop:"args=url2" usage:"url2"`
-	URL    string   `clop:"--url" usage:"URL to work with"`
+	Method   string   `clop:"-X; --request" usage:"Specify request command to use"`
+	Header   []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
+	Data     string   `clop:"-d; --data"   usage:"HTTP POST data"`
+	DataRaw  string   `clop:"--data-raw" usage:"HTTP POST data, '@' allowed"`
+	Form     []string `clop:"-F; --form" usage:"Specify multipart MIME data"`
+	URL2     string   `clop:"args=url2" usage:"url2"`
+	URL      string   `clop:"--url" usage:"URL to work with"`
+	Location bool     `clop:"-L; --location" usage:"Follow redirects"` //TODO
 
 	Err error
 	p   *clop.Clop
@@ -108,9 +110,18 @@ func (c *Curl) Request() (*http.Request, error) {
 		return nil, err
 	}
 
-	data = c.Data
-	if len(c.Data) > 0 && c.Data[0] == '@' {
-		fd, err := os.Open(c.Data[1:])
+	var dataRaw string
+	dataRaw = c.Data
+	// --data 和--data-raw同时出现的话， 取后面的选项
+	// --data-raw @./a.file --data @./b.file 这里取-data @./b.file
+	// --data-raw @./a.file -data @./b.file 这里取-data-raw @./a.file
+	if c.p.GetIndex("data-raw") > c.p.GetIndex("data") {
+		dataRaw = c.DataRaw
+	}
+
+	data = dataRaw
+	if len(dataRaw) > 0 && dataRaw[0] == '@' {
+		fd, err := os.Open(dataRaw[1:])
 		if err != nil {
 			return nil, err
 		}

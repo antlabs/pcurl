@@ -1,6 +1,7 @@
 package pcurl
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/gout"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func createGeneral(data string) *httptest.Server {
 	router := func() *gin.Engine {
 		router := gin.New()
 
-		router.POST("/", func(c *gin.Context) {
+		router.Any("/*test", func(c *gin.Context) {
 			if len(data) > 0 {
 				c.String(200, data)
 			}
@@ -35,13 +36,21 @@ func Test_Curl(t *testing.T) {
 		need       string
 		curlSlice  []string
 		curlString string
+		path       string
 	}
 
-	for _, d := range []testData{
+	for index, d := range []testData{
 		{
 			need:       `{"key":"val"}`,
-			curlSlice:  []string{"curl", "-X", "POST", "-d"},
-			curlString: "curl  -X  POST -d",
+			curlSlice:  []string{"curl", "-X", "POST", "-d", `{"key":"val"}`},
+			curlString: `curl  -X  POST -d '{"key":"val"}'`,
+			path:       "/",
+		},
+		{
+			need:       `{"type":"region","region":"bj","business":"asr","protocol":"private","connect":416"}`,
+			curlSlice:  []string{"curl", "--location", "--request", "DELETE", "--header", "Content-Type: text/plain", "--data-raw", `{"type":"region","region":"bj","business":"asr","protocol":"private","connect":416"}`},
+			curlString: `curl --location --request DELETE --header 'Content-Type: text/plain' --data-raw '{"type":"region","region":"bj","business":"asr","protocol":"private","connect":416"}'`,
+			path:       "/appkey/admin/v1/delete/connect/rule?appkey=xx",
 		},
 	} {
 
@@ -50,21 +59,28 @@ func Test_Curl(t *testing.T) {
 		got := ""
 
 		// 生成curl slice
-		curlSlice := append(d.curlSlice, d.need, ts.URL)
+		url := ts.URL
+		if len(d.path) > 0 {
+			url = url + d.path
+		}
+
+		curlSlice := append(d.curlSlice, url)
+		fmt.Printf("\nindex:%d#%s\n", index, curlSlice)
 		req, err := ParseSlice(curlSlice).Request()
-		assert.NoError(t, err)
+		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 
 		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
-		assert.NoError(t, err)
+		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 		assert.Equal(t, d.need, got)
 
 		// 生成curl字符串
-		curlString := append(d.curlSlice, d.need, ts.URL)
-		req, err = ParseSlice(curlString).Request()
-		assert.NoError(t, err)
+		curlString := d.curlString + " " + url
+		fmt.Printf("\nindex:%d#%s\n", index, curlString)
+		req, err = Parse(curlString).Request()
+		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 
 		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
-		assert.NoError(t, err)
+		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 		assert.Equal(t, d.need, got)
 	}
 

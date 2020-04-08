@@ -11,6 +11,7 @@ const (
 	WordEnd
 )
 
+// TODO 如果只有单个单引号，直接报错
 // TODO 考虑转义
 // TODO 各种换行符号
 func GetArgsToken(curlString string) (curl []string) {
