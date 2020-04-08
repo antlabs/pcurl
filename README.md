@@ -1,6 +1,14 @@
 # pcurl
 pcurl是解析curl表达式的库，还在继续完善中。。。
 
+# feature
+* 支持-X; --request，作用设置GET或POST的选项
+* 支持-H; --header选项，curl中用于设置http header的选项
+* 支持-d; --data选项，作用设置http body
+* 支持--data-raw选项，curl用于设置http body
+* 支持-F --form选项，用作设置formdata
+* 支持--url选项，curl中设置url，一般不会设置这个选项
+
 # quick start
 ```go
 package main
