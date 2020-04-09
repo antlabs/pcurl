@@ -52,6 +52,12 @@ func Test_Curl(t *testing.T) {
 			curlString: `curl --location --request DELETE --header 'Content-Type: text/plain' --data-raw '{"type":"region","region":"bj","business":"asr","protocol":"private","connect":416"}'`,
 			path:       "/appkey/admin/v1/delete/connect/rule?appkey=xx",
 		},
+		{
+			need:       `{"type":"region","list":[{"region":"sh","business":"asr","protocol":"http","connect":56},{"region":"bj","business":"asr","protocol":"websocket","connect":52},{"region":"bj","business":"asr","protocol":"private","connect":51}]}'`,
+			curlSlice:  []string{"curl", "--location", "--request", "POST", "--header", "Content-Type: text/plain", "--data-raw", `{"type":"region","list":[{"region":"sh","business":"asr","protocol":"http","connect":56},{"region":"bj","business":"asr","protocol":"websocket","connect":52},{"region":"bj","business":"asr","protocol":"private","connect":51}]}'`},
+			curlString: `curl --location --request POST --header 'Content-Type: text/plain' --data-raw '{"type":"region","list":[{"region":"sh","business":"asr","protocol":"http","connect":56},{"region":"bj","business":"asr","protocol":"websocket","connect":52},{"region":"bj","business":"asr","protocol":"private","connect":51}]}'`,
+			path:       "/appkey/admin/v1/add/connect/rule?appkey=xx",
+		},
 	} {
 
 		// 创建测试服务
@@ -84,6 +90,60 @@ func Test_Curl(t *testing.T) {
 		assert.Equal(t, d.need, got)
 	}
 
+}
+
+// 测试formdata
+func Test_Form(t *testing.T) {
+	type testForm struct {
+		curlForm       []string
+		curlFormString string
+		need           H
+	}
+
+	for _, formData := range []testForm{
+		testForm{
+			curlForm:       []string{"curl", "-X", "POST", "-F", "text=good", "-F", "voice=@./testdata/voice.pcm"},
+			curlFormString: `curl -X POST -F text=good -F voice=@./testdata/voice.pcm`,
+			need: H{
+				"text":  "good",
+				"voice": "voice\n",
+			},
+		},
+		testForm{
+			curlForm:       []string{"curl", "--request", "POST", "--form", "text=good", "--form", "voice=@./testdata/voice.pcm"},
+			curlFormString: `curl --request POST --form text=good --form voice=@./testdata/voice.pcm`,
+			need: H{
+				"text":  "good",
+				"voice": "voice\n",
+			},
+		},
+	} {
+
+		code := 0
+		// 创建测试服务端
+		ts := createGeneralForm(formData.need, t)
+
+		// 解析curl表达式
+		req, err := ParseSlice(append(formData.curlForm, ts.URL)).Request()
+		assert.NoError(t, err)
+
+		var getJSON H
+		//发送请求
+		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
+		assert.NoError(t, err)
+		assert.Equal(t, code, 200)
+		assert.Equal(t, formData.need, getJSON)
+
+		// 测试string方式
+		req, err = ParseAndRequest(formData.curlFormString + " " + ts.URL)
+		assert.NoError(t, err)
+
+		//发送请求
+		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
+		assert.NoError(t, err)
+		assert.Equal(t, code, 200)
+		assert.Equal(t, formData.need, getJSON)
+	}
 }
 
 func createGeneralHeader(need H, t *testing.T) *httptest.Server {
@@ -208,46 +268,6 @@ func createGeneralForm(need H, t *testing.T) *httptest.Server {
 	}()
 
 	return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
-}
-
-func Test_Form(t *testing.T) {
-	type testForm struct {
-		curlForm []string
-		need     H
-	}
-
-	for _, formData := range []testForm{
-		testForm{
-			curlForm: []string{"curl", "-X", "POST", "-F", "text=good", "-F", "voice=@./testdata/voice.pcm"},
-			need: H{
-				"text":  "good",
-				"voice": "voice\n",
-			},
-		},
-		testForm{
-			curlForm: []string{"curl", "-X", "POST", "--form", "text=good", "--form", "voice=@./testdata/voice.pcm"},
-			need: H{
-				"text":  "good",
-				"voice": "voice\n",
-			},
-		},
-	} {
-
-		code := 0
-		// 创建测试服务端
-		ts := createGeneralForm(formData.need, t)
-
-		// 解析curl表达式
-		req, err := ParseSlice(append(formData.curlForm, ts.URL)).Request()
-		assert.NoError(t, err)
-
-		var getJSON H
-		//发送请求
-		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
-		assert.NoError(t, err)
-		assert.Equal(t, code, 200)
-		assert.Equal(t, formData.need, getJSON)
-	}
 }
 
 //TODO
