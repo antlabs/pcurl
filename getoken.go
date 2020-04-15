@@ -1,24 +1,32 @@
 package pcurl
 
 import (
+	"errors"
 	"strings"
 )
 
+var (
+	ErrSingleQuotes = errors.New("unquoted single quote")
+	ErrDoubleQuotes = errors.New("unquoted double quote")
+	ErrUnknown      = errors.New("pcurl:GetArgsToken:unknown error")
+)
+
+type Sign int
+
 const (
-	Unused       = iota
-	DoubleQuotes //双引号
-	SingleQuotes //单引号
+	Unused       Sign = iota
+	DoubleQuotes      //双引号
+	SingleQuotes      //单引号
 	WordEnd
 )
 
-// TODO 如果只有单个单引号，直接报错
 // TODO 考虑转义
 // TODO 各种换行符号
-func GetArgsToken(curlString string) (curl []string) {
+func GetArgsToken(curlString string) (curl []string, err error) {
 	var (
-		sign      int
+		sign      Sign
 		needSpace bool
-		word      int
+		word      Sign
 	)
 
 	var buf strings.Builder
@@ -82,5 +90,22 @@ func GetArgsToken(curlString string) (curl []string) {
 		buf.Reset()
 	}
 
+	if sign != Unused {
+		return nil, toErr(sign)
+	}
+
 	return
+}
+
+func toErr(sign Sign) error {
+	switch sign {
+	case SingleQuotes:
+		return ErrSingleQuotes
+	case DoubleQuotes:
+		return ErrDoubleQuotes
+	case Unused:
+		return nil
+	default:
+		return ErrUnknown
+	}
 }

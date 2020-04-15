@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Curl结构体
 type Curl struct {
 	Method   string   `clop:"-X; --request" usage:"Specify request command to use"`
 	Header   []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
@@ -22,24 +23,23 @@ type Curl struct {
 	p   *clop.Clop
 }
 
+// 解析curl字符串形式表达式，并返回*http.Request
 func ParseAndRequest(curl string) (*http.Request, error) {
-	return Parse(curl).Request()
+	return ParseString(curl).Request()
 }
 
-func Parse(curl string) *Curl {
-	curlSlice := GetArgsToken(curl)
-	return ParseSlice(curlSlice)
+// ParseString是链式API结构, 如果要拿*http.Request，后接Request()即可
+func ParseString(curl string) *Curl {
+	c := Curl{}
+	curlSlice, err := GetArgsToken(curl)
+	c.Err = err
+	return parseSlice(curlSlice, &c)
 }
 
+// ParseSlice和ParseString的区别，ParseSlice里面保存解析好的curl表达式
 func ParseSlice(curl []string) *Curl {
 	c := Curl{}
-	if len(curl) > 0 && strings.ToLower(curl[0]) == "curl" {
-		curl = curl[1:]
-	}
-
-	c.p = clop.New(curl).SetExit(false)
-	c.Err = c.p.Bind(&c)
-	return &c
+	return parseSlice(curl, &c)
 }
 
 func (c *Curl) createHeader() []string {
@@ -151,4 +151,14 @@ func (c *Curl) Request() (*http.Request, error) {
 	return g.SetURL(url). //设置url
 				SetBody(data). //设置http body
 				Request()      //获取*http.Request
+}
+
+func parseSlice(curl []string, c *Curl) *Curl {
+	if len(curl) > 0 && strings.ToLower(curl[0]) == "curl" {
+		curl = curl[1:]
+	}
+
+	c.p = clop.New(curl).SetExit(false)
+	c.Err = c.p.Bind(&c)
+	return c
 }

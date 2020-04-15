@@ -24,6 +24,8 @@ github.com/guonaihong/clop v0.0.3 h1:TbrXJ3tgYkuoCZXB45tjIhee6167pZJEaWwdibfJO5s
 github.com/guonaihong/clop v0.0.3/go.mod h1:6r46yf9HnBFtFgblQrzvbxzeAbFob3Qud3PnuhphwgI=
 github.com/guonaihong/gout v0.0.10-0.20200319145506-f680e3c89b65 h1:gUPwwuesHdmpmT/648oEKVL1m5cmymi37pznF972dmo=
 github.com/guonaihong/gout v0.0.10-0.20200319145506-f680e3c89b65/go.mod h1:vXvv5Kxr70eM5wrp4F0+t9lnLWmq+YPW2GByll2f/EA=
+github.com/guonaihong/gout v0.0.11 h1:9SieeKKa83zhqvdYDTjJh9bcyW+Jc3CKmzBS/w0Z4i8=
+github.com/guonaihong/gout v0.0.11/go.mod h1:vXvv5Kxr70eM5wrp4F0+t9lnLWmq+YPW2GByll2f/EA=
 github.com/json-iterator/go v1.1.7 h1:KfgG9LzI+pYjr4xvmz/5H4FXjokeP+rlHLhv3iH62Fo=
 github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/leodido/go-urn v1.1.0/go.mod h1:+cyI34gQWZcE1eQU7NVgKkkzdXDQHr1dBMtdAPozLkw=

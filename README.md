@@ -9,6 +9,9 @@ pcurl是解析curl表达式的库，还在继续完善中。。。
 * 支持-F --form选项，用作设置formdata
 * 支持--url选项，curl中设置url，一般不会设置这个选项
 
+# 内容
+- [json](#json)
+- [form data](#form-data)
 # quick start
 ```go
 package main
@@ -39,6 +42,67 @@ func main() {
 
         fmt.Println(err, "resp.size = ", len(resp))
     */
+}
+
+```
+## json
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/antlabs/pcurl"
+    "io"
+    "net/http"
+    "os"
+)
+
+func main() {
+    req, err := pcurl.ParseAndRequest(`curl -XPOST -d '{"hello":"world"}' 127.0.0.1:1234`)
+    if err != nil {
+        fmt.Printf("err:%s\n", err)
+        return
+    }   
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        fmt.Printf("err:%s\n", err)
+        return
+    }   
+    defer resp.Body.Close()
+
+    io.Copy(os.Stdout, resp.Body)
+}
+
+```
+
+## form data
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/antlabs/pcurl"
+    "io"
+    "net/http"
+    "os"
+)
+
+func main() {
+    req, err := pcurl.ParseAndRequest(`curl -XPOST -F mode=A -F text='Good morning' 127.0.0.1:1234`)
+    if err != nil {
+        fmt.Printf("err:%s\n", err)
+        return
+    }   
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        fmt.Printf("err:%s\n", err)
+        return
+    }   
+    defer resp.Body.Close()
+
+    io.Copy(os.Stdout, resp.Body)
 }
 
 ```

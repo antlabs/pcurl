@@ -82,7 +82,7 @@ func Test_Curl(t *testing.T) {
 		// 生成curl字符串
 		curlString := d.curlString + " " + url
 		fmt.Printf("\nindex:%d#%s\n", index, curlString)
-		req, err = Parse(curlString).Request()
+		req, err = ParseString(curlString).Request()
 		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 
 		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
