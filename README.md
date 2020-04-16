@@ -1,4 +1,7 @@
 # pcurl
+[![Go](https://github.com/antlabs/pcurl/workflows/Go/badge.svg)](https://github.com/antlabs/pcurl/actions)
+[![codecov](https://codecov.io/gh/guonaihong/pcurl/branch/master/graph/badge.svg)](https://codecov.io/gh/guonaihong/pcurl)
+
 pcurl是解析curl表达式的库，还在继续完善中。。。
 
 # feature
