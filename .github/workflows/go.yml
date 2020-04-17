@@ -9,12 +9,17 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.13', '1.12', '1.14']
+    name: Go ${{ matrix.go }} sample
+
     steps:
 
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
       with:
-        go-version: 1.13
+        go-version: ${{ matrix.go }}
       id: go
 
     - name: Check out code into the Go module directory
