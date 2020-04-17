@@ -2,7 +2,7 @@
 [![Go](https://github.com/antlabs/pcurl/workflows/Go/badge.svg)](https://github.com/antlabs/pcurl/actions)
 [![codecov](https://codecov.io/gh/antlabs/pcurl/branch/master/graph/badge.svg)](https://codecov.io/gh/antlabs/pcurl)
 
-pcurl是解析curl表达式的库，还在继续完善中。。。
+pcurl是解析curl表达式的库
 
 # feature
 * 支持-X; --request，作用设置GET或POST的选项
