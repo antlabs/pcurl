@@ -1,11 +1,12 @@
 package pcurl
 
 import (
-	"github.com/guonaihong/clop"
-	"github.com/guonaihong/gout"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/guonaihong/clop"
+	"github.com/guonaihong/gout"
 )
 
 // Curl结构体

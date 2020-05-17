@@ -70,8 +70,11 @@ func Test_Curl(t *testing.T) {
 			url = url + d.path
 		}
 
+		// curlSlice追加url
 		curlSlice := append(d.curlSlice, url)
+
 		fmt.Printf("\nindex:%d#%s\n", index, curlSlice)
+
 		req, err := ParseSlice(curlSlice).Request()
 		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 
@@ -179,47 +182,6 @@ func createGeneralHeader(need H, t *testing.T) *httptest.Server {
 	}()
 
 	return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
-}
-
-func Test_Header(t *testing.T) {
-
-	type testHeader struct {
-		curlHeader []string
-		need       H
-	}
-
-	for _, headerData := range []testHeader{
-		testHeader{
-			curlHeader: []string{"curl", "-X", "POST", "-H", "H1:v1", "-H", "H2:v2"},
-			need: H{
-				"H1": "v1",
-				"H2": "v2",
-			},
-		},
-		testHeader{
-			curlHeader: []string{"curl", "-X", "POST", "--header", "H1:v1", "--header", "H2:v2"},
-			need: H{
-				"H1": "v1",
-				"H2": "v2",
-			},
-		},
-	} {
-
-		code := 0
-		// 创建测试服务端
-		ts := createGeneralHeader(headerData.need, t)
-
-		// 解析curl表达式
-		req, err := ParseSlice(append(headerData.curlHeader, ts.URL)).Request()
-		assert.NoError(t, err)
-
-		var getJSON H
-		//发送请求
-		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
-		assert.NoError(t, err)
-		assert.Equal(t, code, 200)
-		assert.Equal(t, headerData.need, getJSON)
-	}
 }
 
 func createGeneralForm(need H, t *testing.T) *httptest.Server {
