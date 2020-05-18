@@ -1,12 +1,11 @@
 package pcurl
 
 import (
+	"github.com/guonaihong/clop"
+	"github.com/guonaihong/gout"
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/guonaihong/clop"
-	"github.com/guonaihong/gout"
 )
 
 // Curl结构体
@@ -95,9 +94,21 @@ func (c *Curl) createForm() ([]interface{}, error) {
 	return form, nil
 }
 
+func (c *Curl) getURL() string {
+	url := c.URL2
+	if c.p.GetIndex("url") > c.p.GetIndex("url2") {
+		url = c.URL
+	}
+	return url
+}
+
 func (c *Curl) Request() (*http.Request, error) {
-	if len(c.Method) == 0 && len(c.Data) > 0 {
-		c.Method = "POST"
+	if len(c.Method) == 0 {
+		if len(c.Data) > 0 {
+			c.Method = "POST"
+		} else {
+			c.Method = "GET"
+		}
 	}
 
 	var (
@@ -144,10 +155,7 @@ func (c *Curl) Request() (*http.Request, error) {
 		g.SetForm(form) //设置formdata
 	}
 
-	url := c.URL2
-	if c.p.GetIndex("url") > c.p.GetIndex("url2") {
-		url = c.URL
-	}
+	url := c.getURL()
 
 	return g.SetURL(url). //设置url
 				SetBody(data). //设置http body

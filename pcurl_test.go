@@ -149,41 +149,6 @@ func Test_Form(t *testing.T) {
 	}
 }
 
-func createGeneralHeader(need H, t *testing.T) *httptest.Server {
-	router := func() *gin.Engine {
-		router := gin.New()
-
-		router.POST("/", func(c *gin.Context) {
-			gotHeader := make(H, 2)
-			//c.ShouldBindHeader(&gotHeader)
-
-			for k, v := range c.Request.Header {
-				if len(v) == 0 {
-					continue
-				}
-				switch k {
-				case "Accept-Encoding", "Content-Length", "User-Agent":
-					continue
-				}
-
-				gotHeader[k] = v[0]
-			}
-
-			//c.ShouldBindHeader(&gotHeader2)
-			if assert.Equal(t, need, gotHeader) {
-				c.JSON(200, gotHeader)
-				return
-			}
-
-			c.String(500, "")
-		})
-
-		return router
-	}()
-
-	return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
-}
-
 func createGeneralForm(need H, t *testing.T) *httptest.Server {
 	router := func() *gin.Engine {
 		router := gin.New()
