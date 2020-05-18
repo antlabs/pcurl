@@ -19,8 +19,9 @@ type Curl struct {
 	URL      string   `clop:"--url" usage:"URL to work with"`
 	Location bool     `clop:"-L; --location" usage:"Follow redirects"` //TODO
 
-	Err error
-	p   *clop.Clop
+	Compressed bool `clop:"--compressed" usage:"Request compressed response"`
+	Err        error
+	p          *clop.Clop
 }
 
 // 解析curl字符串形式表达式，并返回*http.Request
@@ -99,21 +100,28 @@ func (c *Curl) getURL() string {
 	if c.p.GetIndex("url") > c.p.GetIndex("url2") {
 		url = c.URL
 	}
+
 	return url
 }
 
-func (c *Curl) Request() (*http.Request, error) {
-	if len(c.Method) == 0 {
-		if len(c.Data) > 0 {
-			c.Method = "POST"
-		} else {
-			c.Method = "GET"
-		}
+func (c *Curl) emptySetMethod() {
+	if len(c.Method) != 0 {
+		return
 	}
+	if len(c.Data) > 0 {
+		c.Method = "POST"
+		return
+	}
+	c.Method = "GET"
+}
+
+func (c *Curl) Request() (*http.Request, error) {
 
 	var (
 		data interface{}
 	)
+
+	c.emptySetMethod() //如果method为空，设置一个默认值
 
 	header := c.createHeader()
 
@@ -146,6 +154,11 @@ func (c *Curl) Request() (*http.Request, error) {
 	g := gout.New().
 		SetMethod(c.Method). //设置method POST or GET or DELETE
 		Debug(true)          //打开debug模式
+
+	if c.Compressed {
+		header = append(header, "Accept-Encoding", "deflate, gzip")
+		//header = append(header, "Accept-Encoding", "deflate, gzip")
+	}
 
 	if header != nil {
 		g.SetHeader(header) //设置http header
