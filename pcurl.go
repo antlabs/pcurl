@@ -1,11 +1,13 @@
 package pcurl
 
 import (
-	"github.com/guonaihong/clop"
-	"github.com/guonaihong/gout"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/guonaihong/clop"
+	"github.com/guonaihong/gout"
+	"github.com/guonaihong/gout/dataflow"
 )
 
 // Curl结构体
@@ -20,6 +22,7 @@ type Curl struct {
 	Location bool     `clop:"-L; --location" usage:"Follow redirects"` //TODO
 
 	Compressed bool `clop:"--compressed" usage:"Request compressed response"`
+	Insecure   bool `clop:"-k; --insecure" "Allow insecure server connections when using SSL"`
 	Err        error
 	p          *clop.Clop
 }
@@ -115,11 +118,17 @@ func (c *Curl) emptySetMethod() {
 	c.Method = "GET"
 }
 
-func (c *Curl) Request() (*http.Request, error) {
+func (c *Curl) Request() (req *http.Request, err error) {
 
 	var (
 		data interface{}
 	)
+
+	defer func() {
+		if c.Err != nil {
+			err = c.Err
+		}
+	}()
 
 	c.emptySetMethod() //如果method为空，设置一个默认值
 
@@ -151,9 +160,15 @@ func (c *Curl) Request() (*http.Request, error) {
 		data = fd
 	}
 
-	g := gout.New().
-		SetMethod(c.Method). //设置method POST or GET or DELETE
-		Debug(true)          //打开debug模式
+	var g *dataflow.Gout
+	if c.Insecure {
+		g = gout.New(&defaultInsecureSkipVerify)
+	} else {
+		g = gout.New()
+	}
+
+	g.SetMethod(c.Method). //设置method POST or GET or DELETE
+				Debug(true) //打开debug模式
 
 	if c.Compressed {
 		header = append(header, "Accept-Encoding", "deflate, gzip")
