@@ -46,6 +46,18 @@ func Test_Curl(t *testing.T) {
 			curlString: `curl  -X  POST -d '{"key":"val"}'`,
 			path:       "/",
 		},
+		{ //测试-k选项
+			need:       `{"key":"val"}`,
+			curlSlice:  []string{"curl", "-k", "-X", "POST", "-d", `{"key":"val"}`},
+			curlString: `curl -k -X  POST -d '{"key":"val"}'`,
+			path:       "/",
+		},
+		{ //测试--insecure选项
+			need:       `{"key":"val"}`,
+			curlSlice:  []string{"curl", "--insecure", "-X", "POST", "-d", `{"key":"val"}`},
+			curlString: `curl --insecure -X  POST -d '{"key":"val"}'`,
+			path:       "/",
+		},
 		{
 			need:       `{"type":"region","region":"bj","business":"asr","protocol":"private","connect":416"}`,
 			curlSlice:  []string{"curl", "--location", "--request", "DELETE", "--header", "Content-Type: text/plain", "--data-raw", `{"type":"region","region":"bj","business":"asr","protocol":"private","connect":416"}`},
