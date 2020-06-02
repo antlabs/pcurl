@@ -13,6 +13,7 @@ import (
 // Curl结构体
 type Curl struct {
 	Method   string   `clop:"-X; --request" usage:"Specify request command to use"`
+	Get      bool     `clop:"-G; --get" usage:"Put the post data in the URL and use GET"`
 	Header   []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
 	Data     string   `clop:"-d; --data"   usage:"HTTP POST data"`
 	DataRaw  string   `clop:"--data-raw" usage:"HTTP POST data, '@' allowed"`
@@ -107,14 +108,22 @@ func (c *Curl) getURL() string {
 	return url
 }
 
-func (c *Curl) emptySetMethod() {
+func (c *Curl) setMethod() {
+	// 在curl里面-X的选项的优先级别比-G高，所以c.Method为空时才会看c.Get是否设置
+	if len(c.Method) == 0 && c.Get {
+		c.Method = "GET"
+		return
+	}
+
 	if len(c.Method) != 0 {
 		return
 	}
+
 	if len(c.Data) > 0 {
 		c.Method = "POST"
 		return
 	}
+
 	c.Method = "GET"
 }
 
@@ -130,7 +139,7 @@ func (c *Curl) Request() (req *http.Request, err error) {
 		}
 	}()
 
-	c.emptySetMethod() //如果method为空，设置一个默认值
+	c.setMethod()
 
 	header := c.createHeader()
 
