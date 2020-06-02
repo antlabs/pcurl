@@ -13,7 +13,7 @@ import (
 // Curl结构体
 type Curl struct {
 	Method   string   `clop:"-X; --request" usage:"Specify request command to use"`
-	Get      bool     `clop:"-g; --get" usage:"Put the post data in the URL and use GET"`
+	Get      bool     `clop:"-G; --get" usage:"Put the post data in the URL and use GET"`
 	Header   []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
 	Data     string   `clop:"-d; --data"   usage:"HTTP POST data"`
 	DataRaw  string   `clop:"--data-raw" usage:"HTTP POST data, '@' allowed"`

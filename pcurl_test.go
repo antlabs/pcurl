@@ -230,9 +230,9 @@ func Test_Method(t *testing.T) {
 	need := []string{"DELETE", "DELETE", "GET"}
 
 	for index, curlStr := range []string{
-		`curl -X DELETE -g `,
-		`curl -g -XDELETE `,
-		`curl -g `,
+		`curl -X DELETE -G `,
+		`curl -G -XDELETE `,
+		`curl -G `,
 	} {
 		ts := methodServer()
 		req, err := ParseAndRequest(curlStr + ts.URL)
