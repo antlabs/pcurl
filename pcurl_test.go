@@ -209,8 +209,42 @@ func createGeneralForm(need H, t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
 }
 
-//TODO
 func Test_Method(t *testing.T) {
+	methodServer := func() *httptest.Server {
+		router := func() *gin.Engine {
+			router := gin.New()
+
+			router.DELETE("/", func(c *gin.Context) {
+				c.String(200, "DELETE")
+			})
+
+			router.GET("/", func(c *gin.Context) {
+				c.String(200, "GET")
+			})
+			return router
+		}()
+
+		return httptest.NewServer(http.HandlerFunc(router.ServeHTTP))
+	}
+
+	need := []string{"DELETE", "DELETE", "GET"}
+
+	for index, curlStr := range []string{
+		`curl -X DELETE -g `,
+		`curl -g -XDELETE `,
+		`curl -g `,
+	} {
+		ts := methodServer()
+		req, err := ParseAndRequest(curlStr + ts.URL)
+
+		assert.NoError(t, err)
+
+		got := ""
+		err = gout.New().SetRequest(req).BindBody(&got).Do()
+
+		assert.Equal(t, got, need[index])
+		assert.NoError(t, err)
+	}
 }
 
 func Test_URL(t *testing.T) {
