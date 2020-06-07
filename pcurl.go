@@ -3,30 +3,38 @@ package pcurl
 import (
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/guonaihong/clop"
 	"github.com/guonaihong/gout"
-	"github.com/guonaihong/gout/dataflow"
 )
 
 // Curl结构体
 type Curl struct {
-	Method   string   `clop:"-X; --request" usage:"Specify request command to use"`
-	Get      bool     `clop:"-G; --get" usage:"Put the post data in the URL and use GET"`
-	Header   []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
-	Data     string   `clop:"-d; --data"   usage:"HTTP POST data"`
-	DataRaw  string   `clop:"--data-raw" usage:"HTTP POST data, '@' allowed"`
-	Form     []string `clop:"-F; --form" usage:"Specify multipart MIME data"`
-	URL2     string   `clop:"args=url2" usage:"url2"`
-	URL      string   `clop:"--url" usage:"URL to work with"`
-	Location bool     `clop:"-L; --location" usage:"Follow redirects"` //TODO
+	Method        string   `clop:"-X; --request" usage:"Specify request command to use"`
+	Get           bool     `clop:"-G; --get" usage:"Put the post data in the URL and use GET"`
+	Header        []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
+	Data          string   `clop:"-d; --data"   usage:"HTTP POST data"`
+	DataRaw       string   `clop:"--data-raw" usage:"HTTP POST data, '@' allowed"`
+	Form          []string `clop:"-F; --form" usage:"Specify multipart MIME data"`
+	URL2          string   `clop:"args=url2" usage:"url2"`
+	URL           string   `clop:"--url" usage:"URL to work with"`
+	Location      bool     `clop:"-L; --location" usage:"Follow redirects"` //TODO
+	DataUrlencode []string `clop:"--data-urlencode" usage:"HTTP POST data url encoded"`
 
 	Compressed bool `clop:"--compressed" usage:"Request compressed response"`
 	Insecure   bool `clop:"-k; --insecure" "Allow insecure server connections when using SSL"`
 	Err        error
 	p          *clop.Clop
 }
+
+const (
+	bodyURLEncode = "data-urlencode"
+	bodyForm      = "form"
+	bodyData      = "data"
+	bodyDataRaw   = "data-raw"
+)
 
 // 解析curl字符串形式表达式，并返回*http.Request
 func ParseAndRequest(curl string) (*http.Request, error) {
@@ -67,6 +75,56 @@ func (c *Curl) createHeader() []string {
 	}
 
 	return header
+}
+
+func (c *Curl) findHighestPriority() string {
+
+	// 获取 --data-urlencoded,-F or --form, -d or --data, --data-raw的命令行优先级别
+	m := map[uint64]string{
+		c.p.GetIndex(bodyURLEncode): bodyURLEncode,
+		c.p.GetIndex(bodyForm):      bodyForm,
+		c.p.GetIndex(bodyData):      bodyData,
+		c.p.GetIndex(bodyDataRaw):   bodyDataRaw,
+	}
+
+	index := []uint64{
+		c.p.GetIndex(bodyURLEncode),
+		c.p.GetIndex(bodyForm),
+		c.p.GetIndex(bodyData),
+		c.p.GetIndex(bodyDataRaw),
+	}
+
+	// 排序
+	sort.Slice(index, func(i, j int) bool {
+		return index[i] < index[j]
+	})
+
+	// 取优先级最高的选项
+	max := index[len(index)-1]
+
+	return m[max]
+}
+
+func (c *Curl) createWWWForm() ([]interface{}, error) {
+	if len(c.DataUrlencode) == 0 {
+		return nil, nil
+	}
+
+	form := make([]interface{}, len(c.DataUrlencode)*2)
+	index := 0
+	for _, v := range c.DataUrlencode {
+		pos := strings.IndexByte(v, '=')
+		if pos == -1 {
+			continue
+		}
+
+		form[index] = v[:pos]
+		index++
+		form[index] = v[pos+1:]
+		index++
+	}
+
+	return form, nil
 }
 
 func (c *Curl) createForm() ([]interface{}, error) {
@@ -130,7 +188,10 @@ func (c *Curl) setMethod() {
 func (c *Curl) Request() (req *http.Request, err error) {
 
 	var (
-		data interface{}
+		data    interface{}
+		form    []interface{}
+		wwwForm []interface{}
+		dataRaw string
 	)
 
 	defer func() {
@@ -143,21 +204,38 @@ func (c *Curl) Request() (req *http.Request, err error) {
 
 	header := c.createHeader()
 
-	form, err := c.createForm()
-	if err != nil {
-		return nil, err
-	}
-
-	var dataRaw string
-	dataRaw = c.Data
-	// --data 和--data-raw同时出现的话， 取后面的选项
-	// --data-raw @./a.file --data @./b.file 这里取-data @./b.file
-	// --data-raw @./a.file -data @./b.file 这里取-data-raw @./a.file
-	if c.p.GetIndex("data-raw") > c.p.GetIndex("data") {
+	switch c.findHighestPriority() {
+	case bodyURLEncode:
+		if wwwForm, err = c.createWWWForm(); err != nil {
+			return nil, err
+		}
+	case bodyForm:
+		if form, err = c.createForm(); err != nil {
+			return nil, err
+		}
+	case bodyData:
+		dataRaw = c.Data
+	case bodyDataRaw:
 		dataRaw = c.DataRaw
 	}
 
-	data = dataRaw
+	var hc *http.Client
+
+	if c.Insecure {
+		hc = &defaultInsecureSkipVerify
+	}
+
+	g := gout.New(hc)
+	g.SetMethod(c.Method) //设置method POST or GET or DELETE
+
+	if c.Compressed {
+		header = append(header, "Accept-Encoding", "deflate, gzip")
+		//header = append(header, "Accept-Encoding", "deflate, gzip")
+	}
+
+	if len(dataRaw) > 0 {
+		data = dataRaw
+	}
 	if len(dataRaw) > 0 && dataRaw[0] == '@' {
 		fd, err := os.Open(dataRaw[1:])
 		if err != nil {
@@ -169,22 +247,7 @@ func (c *Curl) Request() (req *http.Request, err error) {
 		data = fd
 	}
 
-	var g *dataflow.Gout
-	if c.Insecure {
-		g = gout.New(&defaultInsecureSkipVerify)
-	} else {
-		g = gout.New()
-	}
-
-	g.SetMethod(c.Method). //设置method POST or GET or DELETE
-				Debug(true) //打开debug模式
-
-	if c.Compressed {
-		header = append(header, "Accept-Encoding", "deflate, gzip")
-		//header = append(header, "Accept-Encoding", "deflate, gzip")
-	}
-
-	if header != nil {
+	if len(header) > 0 {
 		g.SetHeader(header) //设置http header
 	}
 
@@ -192,11 +255,18 @@ func (c *Curl) Request() (req *http.Request, err error) {
 		g.SetForm(form) //设置formdata
 	}
 
+	if len(wwwForm) > 0 {
+		g.SetWWWForm(wwwForm) // 设置x-www-form-urlencoded格式数据
+	}
+
+	if data != nil {
+		g.SetBody(data)
+	}
+
 	url := c.getURL()
 
 	return g.SetURL(url). //设置url
-				SetBody(data). //设置http body
-				Request()      //获取*http.Request
+				Request() //获取*http.Request
 }
 
 func parseSlice(curl []string, c *Curl) *Curl {

@@ -13,6 +13,8 @@ pcurl是解析curl表达式的库
 * 支持--url选项，curl中设置url，一般不会设置这个选项
 * 支持--compressed选项
 * 支持-k, --insecure选项
+* 支持-G, --get选项
+* 支持--data-urlencode选项
 
 # 内容
 - [json](#json)
