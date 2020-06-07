@@ -79,6 +79,7 @@ func (c *Curl) createHeader() []string {
 
 func (c *Curl) findHighestPriority() string {
 
+	// 获取 --data-urlencoded,-F or --form, -d or --data, --data-raw的命令行优先级别
 	m := map[uint64]string{
 		c.p.GetIndex(bodyURLEncode): bodyURLEncode,
 		c.p.GetIndex(bodyForm):      bodyForm,
@@ -93,10 +94,12 @@ func (c *Curl) findHighestPriority() string {
 		c.p.GetIndex(bodyDataRaw),
 	}
 
+	// 排序
 	sort.Slice(index, func(i, j int) bool {
 		return index[i] < index[j]
 	})
 
+	// 取优先级最高的选项
 	max := index[len(index)-1]
 
 	return m[max]
@@ -107,9 +110,9 @@ func (c *Curl) createWWWForm() ([]interface{}, error) {
 		return nil, nil
 	}
 
-	form := make([]interface{}, len(c.Form)*2)
+	form := make([]interface{}, len(c.DataUrlencode)*2)
 	index := 0
-	for _, v := range c.Form {
+	for _, v := range c.DataUrlencode {
 		pos := strings.IndexByte(v, '=')
 		if pos == -1 {
 			continue
@@ -230,7 +233,9 @@ func (c *Curl) Request() (req *http.Request, err error) {
 		//header = append(header, "Accept-Encoding", "deflate, gzip")
 	}
 
-	data = dataRaw
+	if len(dataRaw) > 0 {
+		data = dataRaw
+	}
 	if len(dataRaw) > 0 && dataRaw[0] == '@' {
 		fd, err := os.Open(dataRaw[1:])
 		if err != nil {

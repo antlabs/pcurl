@@ -8,7 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Data(t *testing.T) {
+// curl -d
+// curl --data
+// curl --data-raw
+func Test_Data_Option(t *testing.T) {
 
 	type testData struct {
 		need       string
@@ -74,7 +77,9 @@ func Test_Data(t *testing.T) {
 
 		// 生成curl字符串
 		curlString := d.curlString + " " + url
+
 		fmt.Printf("\nindex:%d#%s\n", index, curlString)
+
 		req, err = ParseString(curlString).Request()
 		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
 
