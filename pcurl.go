@@ -1,6 +1,9 @@
+// Copyright [2020-2021] [guonaihong]
+// Apache 2.0
 package pcurl
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"sort"
@@ -35,6 +38,15 @@ const (
 	bodyData      = "data"
 	bodyDataRaw   = "data-raw"
 )
+
+// 内嵌Curl结构体至cmd里面使用，让你的cmd秒变为curl
+func (c *Curl) ParseSliceAndRequest(curl []string) (*http.Request, error) {
+	if c == nil {
+		return nil, errors.New("curl is nil")
+	}
+
+	return parseSlice(curl, c).Request()
+}
 
 // 解析curl字符串形式表达式，并返回*http.Request
 func ParseAndRequest(curl string) (*http.Request, error) {

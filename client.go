@@ -1,3 +1,5 @@
+// Copyright [2020-2021] [guonaihong]
+// Apache 2.0
 package pcurl
 
 import (

@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -122,4 +123,50 @@ func Test_URL(t *testing.T) {
 		assert.Equal(t, code, 200)
 		assert.Equal(t, urlData.need, s)
 	}
+}
+
+// 测试ParseSliceAndRequest 正确的情况
+func Test_ParseSliceAndRequest(t *testing.T) {
+	type testParseSlice struct {
+		curl []string
+		need string
+	}
+
+	//在这里加更多测试数据，for + cast table，很方便加测试数据
+	for _, d := range []testParseSlice{
+		{
+			curl: []string{"-H", "hello:word", "-H", "abc:def", "-d", "body content", "www.qq.com"},
+			need: "POST / HTTP/1.1\r\n" +
+				"Host: www.qq.com\r\n" +
+				"User-Agent: Go-http-client/1.1\r\n" +
+				"Content-Length: 12\r\n" +
+				"Abc: def\r\n" +
+				"Hello: word\r\n" +
+				"Accept-Encoding: gzip\r\n\r\n" +
+				"body content",
+		},
+	} {
+
+		c := Curl{}
+		//生成req
+		req, err := c.ParseSliceAndRequest(d.curl)
+
+		assert.NoError(t, err)
+
+		//把req转成[]byte
+		all, err := httputil.DumpRequestOut(req, true)
+		assert.NoError(t, err)
+
+		//比较数据看下对错
+		assert.Equal(t, d.need, string(all))
+	}
+
+}
+
+// 测试ParseSliceAndRequest 错误的情况
+func Test_ParseSliceAndRequest_Error(t *testing.T) {
+	c := (*Curl)(nil)
+	_, err := c.ParseSliceAndRequest([]string{})
+	assert.Error(t, err)
+
 }
