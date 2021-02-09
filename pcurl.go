@@ -40,12 +40,14 @@ const (
 )
 
 // 内嵌Curl结构体至cmd里面使用，让你的cmd秒变为curl
-func (c *Curl) ParseSliceAndRequest(curl []string) (*http.Request, error) {
+func (c *Curl) SetClopAndRequest(clop2 *clop.Clop) (*http.Request, error) {
 	if c == nil {
 		return nil, errors.New("curl is nil")
 	}
 
-	return parseSlice(curl, c).Request()
+	c.p = clop2
+
+	return c.Request()
 }
 
 // 解析curl字符串形式表达式，并返回*http.Request

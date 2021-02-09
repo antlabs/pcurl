@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/guonaihong/clop"
 	"github.com/guonaihong/gout"
 	"github.com/stretchr/testify/assert"
 )
@@ -146,10 +147,15 @@ func Test_ParseSliceAndRequest(t *testing.T) {
 				"body content",
 		},
 	} {
-
+		//声明解析器
+		clop2 := clop.New(d.curl).SetExit(false)
+		//声明存放解析之后的结构体
 		c := Curl{}
+		//解析
+		clop2.Bind(&c)
+
 		//生成req
-		req, err := c.ParseSliceAndRequest(d.curl)
+		req, err := c.SetClopAndRequest(clop2)
 
 		assert.NoError(t, err)
 
@@ -166,7 +172,7 @@ func Test_ParseSliceAndRequest(t *testing.T) {
 // 测试ParseSliceAndRequest 错误的情况
 func Test_ParseSliceAndRequest_Error(t *testing.T) {
 	c := (*Curl)(nil)
-	_, err := c.ParseSliceAndRequest([]string{})
+	_, err := c.SetClopAndRequest(clop.New([]string{}).SetExit(false))
 	assert.Error(t, err)
 
 }
