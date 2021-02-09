@@ -15,6 +15,7 @@ pcurl是解析curl表达式的库
 * 支持-k, --insecure选项
 * 支持-G, --get选项
 * 支持--data-urlencode选项
+* 支持内嵌到你的结构体里面，让你的cmd秒变curl
 
 # 内容
 - [json](#json)
@@ -110,6 +111,40 @@ func main() {
     defer resp.Body.Close()
 
     io.Copy(os.Stdout, resp.Body)
+}
+
+```
+
+## 继承pcurl的选项(curl)--让你的cmd秒变curl
+自定义的Gen命令继续pcurl所有特性，在此基础加些自定义选项。
+```go
+type Gen struct {
+    //curl选项
+	pcurl.Curl
+
+    //自定义选项
+	Connections string        `clop:"-c; --connections" usage:"Connections to keep open"`
+	Duration    time.Duration `clop:"--duration" usage:"Duration of test"`
+	Thread      int           `clop:"-t; --threads" usage:"Number of threads to use"`
+	Latency     string        `clop:"--latency" usage:"Print latency statistics"`
+	Timeout     time.Duration `clop:"--timeout" usage:"Socket/request timeout"`
+}
+
+func main() {
+	g := &Gen{}
+
+	clop.Bind(&g)
+
+    // pcurl包里面提供
+	req, err := g.SetClopAndRequest(clop.CommandLine)
+	if err != nil {
+		panic(err.Error())
+	}
+
+    // 已经拿到http.Request对象
+    // 如果是标准库直接通过Do()方法发送
+    // 如果是裸socket，可以通过http.DumpRequestOut先转成[]byte再发送到服务端
+    fmt.Printf("%p\n", req)
 }
 
 ```
