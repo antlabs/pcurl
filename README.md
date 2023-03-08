@@ -18,8 +18,10 @@ pcurl是解析curl表达式的库
 * 支持内嵌到你的结构体里面，让你的cmd秒变curl
 
 # 内容
-- [json](#json)
-- [form data](#form-data)
+- [一、json](#json)
+- [二、form data](#form-data)
+- [三、dump json](#dump-json)
+- [四、dump json](#dump-struct)
 # quick start
 ```go
 package main
@@ -114,7 +116,61 @@ func main() {
 }
 
 ```
+## dump to json
+```go
+package main
 
+import (
+    "fmt"
+    "github.com/antlabs/pcurl"
+    "io"
+    "net/http"
+    "os"
+)
+
+func main() {
+    all, err := ParseAndJSON(`curl https://api.openai.com/v1/completions -H 'Content-Type: application/json' -H 'Authorization: Bearer YOUR_API_KEY' -d '{ "model": "text-davinci-003", "prompt": "Say this is a test", "max_tokens": 7, "temperature": 0 }'`)
+	fmt.Printf("%s\n", all)
+/*
+{
+  "url": "https://api.openai.com/v1/completions",
+  "encode": {
+    "body": "json"
+  },
+  "body": {
+    "max_tokens": 7,
+    "model": "text-davinci-003",
+    "prompt": "Say this is a test",
+    "temperature": 0
+  },
+  "header": [
+    "Content-Type: application/json",
+    "Authorization: Bearer YOUR_API_KEY"
+  ]
+}
+}
+*/
+```
+## dump struct 
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/antlabs/pcurl"
+    "io"
+    "net/http"
+    "os"
+)
+
+func main() {
+    all, err := ParseAndObj(`curl https://api.openai.com/v1/completions -H 'Content-Type: application/json' -H 'Authorization: Bearer YOUR_API_KEY' -d '{ "model": "text-davinci-003", "prompt": "Say this is a test", "max_tokens": 7, "temperature": 0 }'`)
+
+	fmt.Printf("%s\n", all)
+/*
+&pcurl.Req{Method:"POST", URL:"https://api.openai.com/v1/completions", Encode:pcurl.Encode{Body:"json"}, Body:map[string]interface {}{"max_tokens":7, "model":"text-davinci-003", "prompt":"Say this is a test", "temperature":0}, Header:[]string{"Content-Type: application/json", "Authorization: Bearer YOUR_API_KEY"}}
+*/
+```
 ## 继承pcurl的选项(curl)--让你的cmd秒变curl
 自定义的Gen命令继续pcurl所有特性，在此基础加些自定义选项。
 ```go

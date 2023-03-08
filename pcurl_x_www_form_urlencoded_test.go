@@ -15,8 +15,8 @@ import (
 )
 
 type testWWWForm struct {
-	Hello string `form:"hello"`
-	Pcurl string `form:"pcurl"`
+	Hello string `form:"hello" www-form:"hello"`
+	Pcurl string `form:"pcurl" www-form:"pcurl"`
 }
 
 func createWWWForm(t *testing.T, need testWWWForm) *httptest.Server {
