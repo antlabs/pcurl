@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type H map[string]interface{}
+type H map[string]any
 
 func createGeneral(data string) *httptest.Server {
 	router := func() *gin.Engine {
