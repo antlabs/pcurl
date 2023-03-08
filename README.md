@@ -20,8 +20,8 @@ pcurl是解析curl表达式的库
 # 内容
 - [一、json](#json)
 - [二、form data](#form-data)
-- [三、dump json](#dump-json)
-- [四、dump json](#dump-struct)
+- [三、dump to json](#dump-to-json)
+- [四、dump struct](#dump-struct)
 # quick start
 ```go
 package main
