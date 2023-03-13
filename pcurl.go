@@ -115,6 +115,10 @@ func (c *Curl) findHighestPriority() string {
 	// 绑定body和优先级的关系
 	bodyName := bodyEmpby
 	max := uint64(0)
+	if index, ok := c.p.GetIndexEx(bodyURLEncode); ok && index > max {
+		bodyName = bodyURLEncode
+	}
+
 	if index, ok := c.p.GetIndexEx(bodyForm); ok && index > max {
 		bodyName = bodyForm
 	}
