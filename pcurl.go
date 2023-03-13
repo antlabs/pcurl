@@ -28,12 +28,15 @@ type Curl struct {
 	DataUrlencode []string `clop:"--data-urlencode" usage:"HTTP POST data url encoded"`
 
 	Compressed bool `clop:"--compressed" usage:"Request compressed response"`
-	Insecure   bool `clop:"-k; --insecure" usage:"Allow insecure server connections when using SSL"`
-	Err        error
-	p          *clop.Clop
+	// 在响应包里面打印http header, 仅做字段赋值
+	Include  bool `clop:"-i;--include" usage:"Include the HTTP response headers in the output. The HTTP response headers can include things like server name, cookies, date of the document, HTTP version and more."`
+	Insecure bool `clop:"-k; --insecure" usage:"Allow insecure server connections when using SSL"`
+	Err      error
+	p        *clop.Clop
 }
 
 const (
+	bodyEmpby     = "empty"
 	bodyURLEncode = "data-urlencode"
 	bodyForm      = "form"
 	bodyData      = "data"
@@ -99,6 +102,10 @@ func (c *Curl) getBodyEncodeAndObj() (string, any, error) {
 		return body.Unmarshal([]byte(c.Data))
 	}
 
+	if name == bodyEmpby {
+		return "", nil, nil
+	}
+
 	return "", nil, ErrUnknownEncode
 }
 
@@ -106,8 +113,12 @@ func (c *Curl) findHighestPriority() string {
 
 	// 获取 --data-urlencoded,-F or --form, -d or --data, --data-raw的命令行优先级别
 	// 绑定body和优先级的关系
-	bodyName := bodyURLEncode
+	bodyName := bodyEmpby
 	max := uint64(0)
+	if index, ok := c.p.GetIndexEx(bodyURLEncode); ok && index > max {
+		bodyName = bodyURLEncode
+	}
+
 	if index, ok := c.p.GetIndexEx(bodyForm); ok && index > max {
 		bodyName = bodyForm
 	}

@@ -23,3 +23,34 @@ func TestParseAndJSON(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Printf("%s\n", all)
 }
+
+type testCaseObj struct {
+	curl string
+	url  string
+	body string
+}
+
+func TestPaserAndObj(t *testing.T) {
+
+	tab := []testCaseObj{
+		{
+			curl: `curl -X POST -d '{"a":"b"}' www.qq.com/test`,
+			url:  `www.qq.com/test`,
+		},
+		{
+			curl: `curl -X POST -i 'http://{{.Host}}/{{.OrgName}}/{{.AppName}}/messages/users' -H 'Content-Type: application/json' -H 'Accept: application/json' -H 'Authorization: Bearer <YourAppToken>' -d '{"from": "user1","to": ["user2"],"type": "txt","body": {"msg": "testmessages"}}'`,
+			url:  `http://{{.Host}}/{{.OrgName}}/{{.AppName}}/messages/users`,
+		},
+		{
+			curl: `curl -X DELETE -H 'Accept: application/json' -H 'Authorization: Bearer <YourAppToken> ' https://{{.Host}}/{{.OrgName}}/{{.AppName}}/chatgroups/{{.GroupID}}`,
+			url:  `https://{{.Host}}/{{.OrgName}}/{{.AppName}}/chatgroups/{{.GroupID}}`,
+		},
+	}
+
+	for _, tc := range tab {
+
+		all, err := ParseAndObj(tc.curl)
+		assert.Equal(t, all.URL, tc.url)
+		assert.NoError(t, err)
+	}
+}
