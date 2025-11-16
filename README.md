@@ -16,6 +16,7 @@ pcurl是解析curl表达式的库
 * 支持-G, --get选项
 * 支持-i, --include选项
 * 支持--data-urlencode选项
+* 支持-b, --cookie选项
 * 支持内嵌到你的结构体里面，让你的cmd秒变curl
 
 # 内容
