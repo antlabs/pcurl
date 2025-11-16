@@ -3,6 +3,7 @@
 package pcurl
 
 import (
+	"bufio"
 	"errors"
 	"net/http"
 	"net/url"
@@ -19,6 +20,7 @@ type Curl struct {
 	Method        string   `clop:"-X; --request" usage:"Specify request command to use"`
 	Get           bool     `clop:"-G; --get" usage:"Put the post data in the URL and use GET"`
 	Header        []string `clop:"-H; --header" usage:"Pass custom header(s) to server"`
+	Cookie        []string `clop:"-b; --cookie" usage:"Pass data to Cookie header or read from cookie file"`
 	Data          string   `clop:"-d; --data"   usage:"HTTP POST data"`
 	DataRaw       string   `clop:"--data-raw" usage:"HTTP POST data, '@' allowed"`
 	Form          []string `clop:"-F; --form" usage:"Specify multipart MIME data"`
@@ -88,6 +90,72 @@ func (c *Curl) createHeader() []string {
 	}
 
 	return header
+}
+
+func (c *Curl) hasHeader(header []string, name string) bool {
+	for i := 0; i+1 < len(header); i += 2 {
+		if strings.EqualFold(header[i], name) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *Curl) createCookieHeader() ([]string, error) {
+	if len(c.Cookie) == 0 {
+		return nil, nil
+	}
+
+	cookieParts := make([]string, 0, len(c.Cookie))
+
+	for _, v := range c.Cookie {
+		// 如果包含 '='，优先认为是 name=value 形式
+		if strings.Contains(v, "=") {
+			cookieParts = append(cookieParts, v)
+			continue
+		}
+
+		// 否则认为是 cookie 文件路径
+		fd, err := os.Open(v)
+		if err != nil {
+			return nil, err
+		}
+
+		scanner := bufio.NewScanner(fd)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if len(line) == 0 || strings.HasPrefix(line, "#") {
+				continue
+			}
+
+			// 兼容 Netscape cookie 文件格式
+			// <domain> <flag> <path> <secure> <expiration> <name> <value>
+			fields := strings.Split(line, "\t")
+			if len(fields) >= 7 {
+				name := fields[5]
+				value := fields[6]
+				cookieParts = append(cookieParts, name+"="+value)
+				continue
+			}
+
+			// 兜底：如果包含 '='，直接当作 name=value
+			if strings.Contains(line, "=") {
+				cookieParts = append(cookieParts, line)
+			}
+		}
+
+		fd.Close()
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(cookieParts) == 0 {
+		return nil, nil
+	}
+
+	return []string{"Cookie", strings.Join(cookieParts, "; ")}, nil
 }
 
 func (c *Curl) getBodyEncodeAndObj() (string, any, error) {
@@ -233,6 +301,10 @@ func (c *Curl) Request() (req *http.Request, err error) {
 	c.setMethod()
 
 	header := c.createHeader()
+	cookieHeader, err := c.createCookieHeader()
+	if err != nil {
+		return nil, err
+	}
 
 	switch c.findHighestPriority() {
 	case bodyURLEncode:
@@ -265,6 +337,10 @@ func (c *Curl) Request() (req *http.Request, err error) {
 
 	if c.Compressed {
 		header = append(header, "Accept-Encoding", "deflate, gzip")
+	}
+
+	if len(cookieHeader) > 0 && !c.hasHeader(header, "Cookie") {
+		header = append(header, cookieHeader...)
 	}
 
 	if len(dataRaw) > 0 {
