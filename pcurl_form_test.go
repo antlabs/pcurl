@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/gout"
-	"github.com/stretchr/testify/assert"
 )
 
 func createGeneralForm(need H, t *testing.T) *httptest.Server {
@@ -19,8 +18,10 @@ func createGeneralForm(need H, t *testing.T) *httptest.Server {
 		router.POST("/", func(c *gin.Context) {
 			gotForm := make(H, 2)
 			err := c.Request.ParseMultipartForm(32 * 1024 * 1024)
-
-			assert.NoError(t, err)
+			if err != nil {
+				t.Errorf("ParseMultipartForm failed: %v", err)
+				return
+			}
 
 			for k, f := range c.Request.Form {
 				if len(f) == 0 {
@@ -34,7 +35,10 @@ func createGeneralForm(need H, t *testing.T) *httptest.Server {
 					continue
 				}
 				fd, err := f[0].Open()
-				assert.NoError(t, err)
+				if err != nil {
+					t.Errorf("open multipart file failed: %v", err)
+					return
+				}
 
 				var s strings.Builder
 
@@ -46,12 +50,12 @@ func createGeneralForm(need H, t *testing.T) *httptest.Server {
 			c.ShouldBind(&gotForm)
 
 			//c.ShouldBindHeader(&gotHeader2)
-			if assert.Equal(t, need, gotForm) {
-				c.JSON(200, gotForm)
+			if !mapsEqual(need, gotForm) {
+				c.String(500, "")
 				return
 			}
-
-			c.String(500, "")
+			c.JSON(200, gotForm)
+			return
 		})
 
 		return router
@@ -93,23 +97,39 @@ func Test_Form(t *testing.T) {
 
 		// 解析curl表达式
 		req, err := ParseSlice(append(formData.curlForm, ts.URL)).Request()
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ParseSlice.Request failed: %v", err)
+		}
 
 		var getJSON H
 		//发送请求
 		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
-		assert.NoError(t, err)
-		assert.Equal(t, code, 200)
-		assert.Equal(t, formData.need, getJSON)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		if code != 200 {
+			t.Fatalf("unexpected status code, got=%d want=%d", code, 200)
+		}
+		if !mapsEqual(formData.need, getJSON) {
+			t.Fatalf("unexpected JSON, got=%v want=%v", getJSON, formData.need)
+		}
 
 		// 测试string方式
 		req, err = ParseAndRequest(formData.curlFormString + " " + ts.URL)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ParseAndRequest failed: %v", err)
+		}
 
 		//发送请求
 		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
-		assert.NoError(t, err)
-		assert.Equal(t, code, 200)
-		assert.Equal(t, formData.need, getJSON)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		if code != 200 {
+			t.Fatalf("unexpected status code, got=%d want=%d", code, 200)
+		}
+		if !mapsEqual(formData.need, getJSON) {
+			t.Fatalf("unexpected JSON, got=%v want=%v", getJSON, formData.need)
+		}
 	}
 }

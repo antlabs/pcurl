@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/guonaihong/gout"
-	"github.com/stretchr/testify/assert"
 )
 
 // curl -d
@@ -69,11 +68,17 @@ func Test_Data_Option(t *testing.T) {
 		fmt.Printf("\nindex:%d#%s\n", index, curlSlice)
 
 		req, err := ParseSlice(curlSlice).Request()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
+		if err != nil {
+			t.Fatalf("ParseSlice.Request failed (index=%d): %v", index, err)
+		}
 
 		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
-		assert.Equal(t, d.need, got)
+		if err != nil {
+			t.Fatalf("request failed (index=%d): %v", index, err)
+		}
+		if got != d.need {
+			t.Fatalf("unexpected body (index=%d): got=%q want=%q", index, got, d.need)
+		}
 
 		// 生成curl字符串
 		curlString := d.curlString + " " + url
@@ -81,11 +86,17 @@ func Test_Data_Option(t *testing.T) {
 		fmt.Printf("\nindex:%d#%s\n", index, curlString)
 
 		req, err = ParseString(curlString).Request()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
+		if err != nil {
+			t.Fatalf("ParseString.Request failed (index=%d): %v", index, err)
+		}
 
 		err = gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
-		assert.Equal(t, d.need, got, fmt.Sprintf("test index:%d", index))
+		if err != nil {
+			t.Fatalf("request failed (index=%d): %v", index, err)
+		}
+		if got != d.need {
+			t.Fatalf("unexpected body (index=%d): got=%q want=%q", index, got, d.need)
+		}
 	}
 
 }

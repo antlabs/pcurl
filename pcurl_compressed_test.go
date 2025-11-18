@@ -1,7 +1,6 @@
 package pcurl
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +10,6 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/gout"
-	"github.com/stretchr/testify/assert"
 )
 
 func createCompressed() *httptest.Server {
@@ -41,15 +39,21 @@ func Test_Compressed(t *testing.T) {
 		curlString := v + " " + router.URL + "/" + " " + "-d " + strings.Repeat("test", 100)
 
 		req, err := ParseAndRequest(curlString)
-
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ParseAndRequest failed: %v", err)
+		}
 
 		code := 0
 		rHeader := rspHeader{}
 		err = gout.New().SetRequest(req).Code(&code).BindHeader(&rHeader).Do()
-
-		assert.NoError(t, err)
-		assert.Equal(t, code, 200, fmt.Sprintf("server address:%s", router.URL))
-		assert.Equal(t, rHeader.ContentEncoding, "gzip")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		if code != 200 {
+			t.Fatalf("unexpected status code, got=%d want=%d server=%s", code, 200, router.URL)
+		}
+		if rHeader.ContentEncoding != "gzip" {
+			t.Fatalf("unexpected Content-Encoding, got=%q want=%q", rHeader.ContentEncoding, "gzip")
+		}
 	}
 }

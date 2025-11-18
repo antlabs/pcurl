@@ -5,15 +5,28 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"reflect"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/clop"
 	"github.com/guonaihong/gout"
-	"github.com/stretchr/testify/assert"
 )
 
 type H map[string]any
+
+// mapsEqual compares two H maps for equality in tests.
+func mapsEqual(a, b H) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if bv, ok := b[k]; !ok || bv != v {
+			return false
+		}
+	}
+	return true
+}
 
 func createGeneral(data string) *httptest.Server {
 	router := func() *gin.Engine {
@@ -72,14 +85,18 @@ func Test_Method(t *testing.T) {
 	} {
 		ts := methodServer()
 		req, err := ParseAndRequest(curlStr + ts.URL)
-
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ParseAndRequest failed: %v", err)
+		}
 
 		got := ""
 		err = gout.New().SetRequest(req).BindBody(&got).Do()
-
-		assert.Equal(t, got, need[index])
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		if got != need[index] {
+			t.Fatalf("unexpected method, got=%q want=%q", got, need[index])
+		}
 	}
 }
 
@@ -115,14 +132,22 @@ func Test_URL(t *testing.T) {
 		}
 
 		req, err := ParseSlice(curl).Request()
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ParseSlice.Request failed: %v", err)
+		}
 
 		s := ""
 		//发送请求
 		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindBody(&s).Do()
-		assert.NoError(t, err)
-		assert.Equal(t, code, 200)
-		assert.Equal(t, urlData.need, s)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		if code != 200 {
+			t.Fatalf("unexpected status code, got=%d want=%d", code, 200)
+		}
+		if s != urlData.need {
+			t.Fatalf("unexpected body, got=%q want=%q", s, urlData.need)
+		}
 	}
 }
 
@@ -156,15 +181,20 @@ func Test_ParseSliceAndRequest(t *testing.T) {
 
 		//生成req
 		req, err := c.SetClopAndRequest(clop2)
-
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("SetClopAndRequest failed: %v", err)
+		}
 
 		//把req转成[]byte
 		all, err := httputil.DumpRequestOut(req, true)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("DumpRequestOut failed: %v", err)
+		}
 
 		//比较数据看下对错
-		assert.Equal(t, d.need, string(all))
+		if !reflect.DeepEqual(d.need, string(all)) {
+			t.Fatalf("unexpected request dump, got=%q want=%q", string(all), d.need)
+		}
 	}
 
 }
@@ -173,6 +203,8 @@ func Test_ParseSliceAndRequest(t *testing.T) {
 func Test_ParseSliceAndRequest_Error(t *testing.T) {
 	c := (*Curl)(nil)
 	_, err := c.SetClopAndRequest(clop.New([]string{}).SetExit(false))
-	assert.Error(t, err)
+	if err == nil {
+		t.Fatalf("expected error but got nil")
+	}
 
 }

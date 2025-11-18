@@ -1,14 +1,12 @@
 package pcurl
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/gout"
-	"github.com/stretchr/testify/assert"
 )
 
 func createGeneralHeader(need H, t *testing.T) *httptest.Server {
@@ -32,12 +30,12 @@ func createGeneralHeader(need H, t *testing.T) *httptest.Server {
 			}
 
 			//c.ShouldBindHeader(&gotHeader2)
-			if assert.Equal(t, need, gotHeader) {
-				c.JSON(200, gotHeader)
+			if !mapsEqual(need, gotHeader) {
+				c.String(500, "")
 				return
 			}
-
-			c.String(500, "")
+			c.JSON(200, gotHeader)
+			return
 		}
 
 		router.POST("/", cb)
@@ -90,14 +88,21 @@ func Test_Header(t *testing.T) {
 
 		// 解析curl表达式
 		req, err := ParseSlice(append(headerData.curlHeader, ts.URL)).Request()
-		assert.NoError(t, err, fmt.Sprintf("index = %d", index))
+		if err != nil {
+			t.Fatalf("ParseSlice.Request failed (index=%d): %v", index, err)
+		}
 
 		var getJSON H
 		//发送请求
 		err = gout.New().SetRequest(req).Debug(true).Code(&code).BindJSON(&getJSON).Do()
-
-		assert.NoError(t, err)
-		assert.Equal(t, headerData.need, getJSON, fmt.Sprintf("index = %d", index))
-		assert.Equal(t, code, 200, fmt.Sprintf("index = %d", index))
+		if err != nil {
+			t.Fatalf("request failed (index=%d): %v", index, err)
+		}
+		if !mapsEqual(headerData.need, getJSON) {
+			t.Fatalf("unexpected header JSON (index=%d): got=%v want=%v", index, getJSON, headerData.need)
+		}
+		if code != 200 {
+			t.Fatalf("unexpected status code (index=%d): got=%d want=%d", index, code, 200)
+		}
 	}
 }

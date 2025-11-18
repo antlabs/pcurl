@@ -11,7 +11,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/guonaihong/gout"
-	"github.com/stretchr/testify/assert"
 )
 
 type testWWWForm struct {
@@ -27,16 +26,21 @@ func createWWWForm(t *testing.T, need testWWWForm) *httptest.Server {
 
 		var buf bytes.Buffer
 		_, err := io.Copy(&buf, c.Request.Body)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("copy body failed: %v", err)
+		}
 
 		ioutil.NopCloser(&buf)
 
 		c.Request.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 		err = c.ShouldBind(&wf)
-
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ShouldBind failed: %v", err)
+		}
 		//err := c.ShouldBind(&wf)
-		assert.Equal(t, need, wf)
+		if wf != need {
+			t.Fatalf("unexpected form, got=%+v want=%+v", wf, need)
+		}
 		io.Copy(c.Writer, &buf)
 	})
 
@@ -56,8 +60,12 @@ func Test_DataURLEncode_Option(t *testing.T) {
 	sendRequest := func(d testData, index int, req *http.Request) {
 		got := ""
 		err := gout.New().SetRequest(req).Debug(true).BindBody(&got).Do()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
-		assert.Equal(t, d.need, got, fmt.Sprintf("test index:%d", index))
+		if err != nil {
+			t.Fatalf("request failed (index=%d): %v", index, err)
+		}
+		if got != d.need {
+			t.Fatalf("unexpected body (index=%d): got=%q want=%q", index, got, d.need)
+		}
 	}
 
 	for index, d := range []testData{
@@ -85,7 +93,9 @@ func Test_DataURLEncode_Option(t *testing.T) {
 		fmt.Printf("\nindex:%d#%s\n", index, curlSlice)
 
 		req, err := ParseSlice(curlSlice).Request()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
+		if err != nil {
+			t.Fatalf("ParseSlice.Request failed (index=%d): %v", index, err)
+		}
 
 		// 发送请求
 		sendRequest(d, index, req)
@@ -97,7 +107,9 @@ func Test_DataURLEncode_Option(t *testing.T) {
 		fmt.Printf("\nindex:%d#%s\n", index, curlString)
 
 		req, err = ParseString(curlString).Request()
-		assert.NoError(t, err, fmt.Sprintf("test index :%d", index))
+		if err != nil {
+			t.Fatalf("ParseString.Request failed (index=%d): %v", index, err)
+		}
 
 		// 发送请求
 		sendRequest(d, index, req)
